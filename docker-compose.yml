@@ -1,0 +1,58 @@
+# ServerOS — runs in Docker, manages the Ubuntu host.
+# Prepare the host first:  sudo ./install.sh   (creates the agent, directories and .env)
+name: serveros
+services:
+  serveros:
+    build: .
+    image: serveros:latest
+    container_name: serveros
+    restart: unless-stopped
+    user: "10001:10001"
+    # Group access to the Docker socket and to the host agent socket (values written by install.sh into .env).
+    group_add:
+      - "${DOCKER_GID:?run ./install.sh or set DOCKER_GID (stat -c %g /var/run/docker.sock)}"
+      - "${AGENT_GID:-10001}"
+    # Reachable only from the host itself; put your existing HTTPS reverse proxy in front (see deploy/nginx-example.conf).
+    ports:
+      - "127.0.0.1:${SERVEROS_PORT:-8080}:8080"
+    environment:
+      TZ: ${TZ:-UTC}
+      HOST_PORT: ${SERVEROS_PORT:-8080}
+      HOST_DATA_DIR: ${SERVEROS_DATA:-/opt/serveros/data}
+      STACKS_DIR: ${STACKS_DIR:-/opt/serveros/stacks}
+      COOKIE_SECURE: ${COOKIE_SECURE:-auto}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - ${SERVEROS_DATA:-/opt/serveros/data}:/data
+      # Compose projects: the SAME path on host and container so relative bind mounts in stacks resolve correctly.
+      - ${STACKS_DIR:-/opt/serveros/stacks}:${STACKS_DIR:-/opt/serveros/stacks}
+      # Docker Engine API. This is ROOT-EQUIVALENT access to the host (":ro" does not change that).
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Host agent socket + secret token (agent runs on the host, see agent/)
+      - /run/serveros:/run/serveros:ro
+      - /etc/serveros/agent.token:/run/secrets/serveros-agent-token:ro
+      # Read-only host metrics. Only these specific files/dirs are mounted — not the host root.
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /etc/hostname:/host/etc/hostname:ro
+      - /etc/passwd:/host/etc/passwd:ro
+    # Not privileged. No Linux capabilities are needed by the application itself.
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

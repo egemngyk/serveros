@@ -1,0 +1,21 @@
+[Unit]
+Description=ServerOS host agent (whitelisted host operations for the ServerOS container)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/lib/serveros/serveros-agent.py
+Restart=on-failure
+RestartSec=3
+# The agent needs root to manage nginx/certbot/systemd and to provide the host terminal.
+# Reduce what is still possible:
+NoNewPrivileges=false
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=false
+LockPersonality=true
+PrivateTmp=false
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - name: Syntax check (server + web)
+        run: |
+          for f in $(find server web -name '*.js'); do node --check "$f"; done
+      - name: Syntax check (host agent)
+        run: python3 -m py_compile agent/serveros-agent.py
+      - name: Build Docker image
+        run: docker build -t serveros:ci .

@@ -1,0 +1,10 @@
+{
+  "name": "ServerOS",
+  "short_name": "ServerOS",
+  "description": "Self-hosted server management",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e1116",
+  "theme_color": "#0e1116",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

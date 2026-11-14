@@ -1,0 +1,13 @@
+{
+  "socket": "/run/serveros/agent.sock",
+  "socket_group": "serveros",
+  "token_file": "/etc/serveros/agent.token",
+  "state_dir": "/var/lib/serveros-agent",
+  "app_uid": 10001,
+  "app_gid": 10001,
+  "file_roots": ["/home", "/opt", "/srv", "/var/www", "/etc/nginx", "/tmp"],
+  "backup_dest_root": "/opt/serveros/data",
+  "terminal_user": "root",
+  "max_terminals": 8,
+  "protected_units": []
+}
